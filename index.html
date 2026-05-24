@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gaushala Donations</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f5f3;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    nav {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    nav button {
+      margin: 5px;
+      padding: 6px 14px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    nav button.active {
+      border-bottom: 2px solid black;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .active-page {
+      display: block;
+    }
+
+    /* INTRO TEXT */
+    .intro {
+      margin-bottom: 30px;
+      line-height: 1.6;
+      max-width: 800px;
+    }
+
+    /* GALLERY */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 6px;
+      background: #ddd;
+    }
+
+    .card img,
+    .card iframe {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+      border: none;
+    }
+
+    /* overlay */
+    .overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+      color: white;
+    }
+
+    .name {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .date {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    /* CONTACT */
+    .contact {
+      max-width: 600px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <header>Cow Mata</header>
+
+  <nav>
+    <button class="tab active" onclick="showPage('gallery', this)">Gallery</button>
+    <button class="tab" onclick="showPage('contact', this)">Reach Us</button>
+  </nav>
+
+  <!-- GALLERY -->
+  <div id="gallery" class="page active-page">
+
+    <div class="intro">
+      <p>
+        We are a group of like-minded people who intend to support the welfare of Cows, Pigeons etc.
+        We are not part of any organization/society/institution. Anyone from Chennai who wishes to support
+        for this noble cause, please do let us know. He/She can visit and help us in distribution of fodder
+        (no financial help). If anyone wishes to help, then they can directly buy the stuffs from vendors
+        or reach out to us. There is absolutely zero overhead, whatever is spent goes directly to the stomach
+        of the needy animals.
+      </p>
+
+      <p>
+        Please find some clips which we took during our weekly visit.
+      </p>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- CONTACT -->
+  <div id="contact" class="page">
+    <div class="contact">
+      <h3>Reach Us</h3>
+
+      <p>
+        Chennai, India<br><br>
+        Contact: XXXXXXXX<br>
+        Email: your@email.com
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SHEET_URL = "https://opensheet.elk.sh/1FibN4Oc6B-_9M4Z54Sxbnj8XY4IZsyr0-IZ-YUTezyM/Gaushala_Data";
+
+// TAB SWITCH
+function showPage(pageId, el) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active-page"));
+  document.getElementById(pageId).classList.add("active-page");
+
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+}
+
+// LOAD DATA
+fetch(SHEET_URL)
+  .then(res => res.json())
+  .then(data => render(data));
+
+function render(data) {
+  const grid = document.getElementById("grid");
+
+  grid.innerHTML = data.map(d => {
+    let media = "";
+
+    // IMAGE
+    if (d.Type === "image") {
+      media = `<img src="${d.Value}" />`;
+    }
+
+    // VIDEO
+    if (d.Type === "video") {
+      const id = extractYouTubeId(d.Value);
+
+      if (id) {
+        media = `
+          <iframe 
+            src="https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}"
+            allow="autoplay">
+          </iframe>
+        `;
+      }
+    }
+
+    return `
+      <div class="card">
+        ${media}
+        <div class="overlay">
+          <div class="name">${d.Name || ""}</div>
+          <div class="date">${formatDate(d.Timestamp)}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// DATE FORMAT
+function formatDate(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return d.toLocaleDateString();
+}
+
+// YOUTUBE ID
+function extractYouTubeId(url) {
+  try {
+    const u = new URL(url);
+
+    if (u.hostname.includes("youtu.be")) {
+      return u.pathname.slice(1);
+    }
+
+    if (u.searchParams.get("v")) {
+      return u.searchParams.get("v");
+    }
+
+    const match = url.match(/(?:embed\/|v=)([^&]+)/);
+    return match ? match[1] : null;
+
+  } catch {
+    return null;
+  }
+}
+</script>
+
+</body>
+</html>
